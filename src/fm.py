@@ -90,14 +90,36 @@ def counting_sort(lst: list[memoryview], place):
         ordered += counts[key]
     return ordered
 
+def build_rank_table(x, alphadic, bwt):
+    table = [[0 for _ in alphabet] for _ in range(0, len(bwt)+1)]
+
+    for i in range(1, len(bwt)+1):        
+        for j in range(0, len(alphabet)):
+            table[i][j] = table[i-1][j]
+        
+        bwtValue = bwt[i-1]
+        index = alphadic.get(chr(x[bwtValue]))
+        table[i][index] += 1
+
+    return table
+
+def getrank(alphadic, index, c, rank_table):
+    return rank_table[index][alphadic.get(c)]
+
+def select(first, last, )
 
 if __name__ == '__main__':
+    alphabet = ["$", "a", "b"]
+    alphadic = {a: i for i, a in enumerate(alphabet)}
     x = memoryview("abaaba$".encode())
     suf = getSuffixes(x)
 
     f = radix_sort(suf)
     bwt = [(i-1)%len(f) for i in f]
 
-    print(f, bwt)
+    rank_table = build_rank_table(x, alphadic, bwt)
+
+    print(getrank(alphadic, 3, "a", rank_table))
+    
 
     # main()
