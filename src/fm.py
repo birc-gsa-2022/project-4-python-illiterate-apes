@@ -91,22 +91,93 @@ def counting_sort(lst: list[memoryview], place):
     return ordered
 
 def build_rank_table(x, alphadic, bwt):
-    table = [[0 for _ in alphabet] for _ in range(0, len(bwt)+1)]
+    counts = {a: 0 for a in alphadic}
+    table = [[0 for _ in alphadic] for _ in range(0, len(bwt)+1)]
 
     for i in range(1, len(bwt)+1):        
-        for j in range(0, len(alphabet)):
+        for j in range(0, len(alphadic)):
             table[i][j] = table[i-1][j]
         
         bwtValue = bwt[i-1]
-        index = alphadic.get(chr(x[bwtValue]))
+        c = chr(x[bwtValue])
+
+        # Add the count
+        counts[c] += 1
+
+        index = alphadic.get(c)
         table[i][index] += 1
 
-    return table
+    return table, counts
+
+def getFirstIndexList(x, f, alphadic):
+    firstIndexList = {a: -1 for a in alphadic}
+    indexesFound = 0
+
+    for i, xIndex in enumerate(f):   
+        c = chr(x[xIndex])
+        if firstIndexList.get(c) < 0:
+            firstIndexList[c] = i
+            indexesFound += 1
+
+            if indexesFound >= len(alphadic):
+                return firstIndexList
+    
+    return firstIndexList
+
 
 def getrank(alphadic, index, c, rank_table):
     return rank_table[index][alphadic.get(c)]
 
-def select(first, last, )
+def searchPattern(x, p, f, l, rank_table, firstIndexList, countTable, alphadic):
+    firstRank = -1
+    nRanks = 0
+
+    if p == "":
+        return
+    
+    if len(p) == 1:
+        # TODO: Do this
+        return
+
+    print(firstIndexList) # {'$': 0, 'a': 1, 'b': 5}
+    # First case
+    if True:
+        c = p[len(p)-1] # b
+        upperBound = firstIndexList.get(c)
+        lowerBound = upperBound+countTable.get(c)
+
+        for j in range(upperBound, lowerBound):
+            print (chr(x[l[j]]), p[len(p)-2], sep=" == ")
+            if chr(x[l[j]]) == p[len(p)-2]:
+                if firstRank < 0:
+                    firstRank = getrank(alphadic, j, p[len(p)-2], rank_table)
+                nRanks += 1
+
+    for i in range(len(p)-2, 0, -1):
+        if firstRank < 0:
+            print("Nothing :(")
+            return
+
+        # Look in f
+        c = p[i]
+        upperBound = firstIndexList.get(c)+firstRank
+        lowerBound = upperBound+nRanks
+        
+        firstRank = -1
+        nRanks = 0
+        for j in range(upperBound, lowerBound):
+            if chr(x[l[j]]) == p[i-1]:
+                if firstRank < 0:
+                    firstRank = getrank(alphadic, j, p[i-1], rank_table)
+                nRanks += 1
+
+    # Handle 0 case: success
+    print(firstRank, nRanks)  # 2 2
+    firstSolution = firstIndexList.get(p[0])+firstRank
+    for i in range(0, nRanks):
+        yield f[i+firstSolution]
+
+    
 
 if __name__ == '__main__':
     alphabet = ["$", "a", "b"]
@@ -117,9 +188,16 @@ if __name__ == '__main__':
     f = radix_sort(suf)
     bwt = [(i-1)%len(f) for i in f]
 
-    rank_table = build_rank_table(x, alphadic, bwt)
+    rank_table, countTable = build_rank_table(x, alphadic, bwt)
 
-    print(getrank(alphadic, 3, "a", rank_table))
+    firstIndexList = getFirstIndexList(x, f, alphadic)
+    
+    matches = list(searchPattern(x, "ba", f, bwt, rank_table, firstIndexList, countTable, alphadic))
+    print("Matches: ")
+    for m in matches:
+        print(m)
+
+    # print(getrank(alphadic, 3, "a", rank_table))
     
 
     # main()
