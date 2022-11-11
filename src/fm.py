@@ -129,17 +129,18 @@ def getrank(alphadic, index, c, rank_table):
     return rank_table[index][alphadic.get(c)]
 
 def searchPattern(x, p, f, l, rank_table, firstIndexList, countTable, alphadic):
-    firstRank = -1
-    nRanks = 0
-
     if p == "":
         return
     
     if len(p) == 1:
-        # TODO: Do this
+        firstMatch = firstIndexList.get(p[0])
+        for i in range(0, countTable.get(p[0])):
+            yield f[i + firstMatch]
         return
 
-    print(firstIndexList) # {'$': 0, 'a': 1, 'b': 5}
+    firstRank = -1
+    nRanks = 0
+
     # First case
     if True:
         c = p[len(p)-1] # b
@@ -180,9 +181,9 @@ def searchPattern(x, p, f, l, rank_table, firstIndexList, countTable, alphadic):
     
 
 if __name__ == '__main__':
-    alphabet = ["$", "a", "b"]
+    alphabet = ["$", "i", "m", "p", "s"]
     alphadic = {a: i for i, a in enumerate(alphabet)}
-    x = memoryview("abaaba$".encode())
+    x = memoryview("mississippi$".encode())
     suf = getSuffixes(x)
 
     f = radix_sort(suf)
@@ -192,7 +193,7 @@ if __name__ == '__main__':
 
     firstIndexList = getFirstIndexList(x, f, alphadic)
     
-    matches = list(searchPattern(x, "ba", f, bwt, rank_table, firstIndexList, countTable, alphadic))
+    matches = list(searchPattern(x, "p", f, bwt, rank_table, firstIndexList, countTable, alphadic))
     print("Matches: ")
     for m in matches:
         print(m)
