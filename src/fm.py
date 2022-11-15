@@ -37,7 +37,7 @@ def lower(a: str, x: str, sa: memoryview, lo: int, hi: int, offset: int) -> int:
     """Finds the lower bound of `a` at `offset` in the block defined by `lo:hi`."""
     while lo < hi:  # Search in sa[lo:hi]
         m = (lo + hi) // 2
-        if x[sa[m] + offset % len(x)] < a: # compare at column offset in sa
+        if x[(sa[m] + offset) % len(x)] < a: # compare at column offset in sa
             lo = m + 1
         else:
             hi = m
@@ -54,7 +54,6 @@ def search(sa, pattern, genome):
         hi = upper(a, genome, sa, lo, hi, offset)
     for sol in sa[lo:hi]:
         yield sol+1
-    return
 
 def getSuffixes(x):
     """
@@ -76,14 +75,16 @@ def radix_sort(lst: list[memoryview]):
             
 
 def counting_sort(lst: list[memoryview], place):
+    print(lst)
     maximum = max(lst, key = len)
     counts = dict.fromkeys(["$",*sorted(maximum)],[])
     for string_index in range(len(lst)):
         if place >= len(lst[string_index]):
-            counts["$"] = [*counts["$"], lst[string_index]]
+            counts["$"] += lst[string_index]
+
             
         else:
-            counts[lst[string_index][place]] = [*counts[lst[string_index][place]], lst[string_index]]
+            counts[lst[string_index][place]] += lst[string_index]
 
     ordered = []
     for key in counts:
@@ -91,7 +92,6 @@ def counting_sort(lst: list[memoryview], place):
     return ordered
 
 def build_rank_table(x, alphadic, bwt):
-    counts = {a: 0 for a in alphadic}
     table = [[0 for _ in alphadic] for _ in range(0, len(bwt)+1)]
 
     for i in range(1, len(bwt)+1):        
@@ -101,13 +101,10 @@ def build_rank_table(x, alphadic, bwt):
         bwtValue = bwt[i-1]
         c = chr(x[bwtValue])
 
-        # Add the count
-        counts[c] += 1
-
         index = alphadic.get(c)
         table[i][index] += 1
 
-    return table, counts
+    return table
 
 def getFirstIndexList(x, f, alphadic):
     firstIndexList = {a: -1 for a in alphadic}
@@ -128,72 +125,36 @@ def getFirstIndexList(x, f, alphadic):
 def getrank(alphadic, index, c, rank_table):
     return rank_table[index][alphadic.get(c)]
 
-def searchPattern(x, p, f, l, rank_table, firstIndexList, countTable, alphadic):
+def searchPattern(p, f, rank_table, firstIndexList, alphadic):
     if p == "":
         return
     
-    if len(p) == 1:
-        firstMatch = firstIndexList.get(p[0])
-        for i in range(0, countTable.get(p[0])):
-            yield f[i + firstMatch]
-        return
+    left, right = 0, len(f)
+    for a in reversed(p):
+        left = firstIndexList[a] + rank_table[left][alphadic.get(a)]
+        right = firstIndexList[a] + rank_table[right][alphadic.get(a)]
+        if left >= right: return  # no matches
 
-    firstRank = -1
-    nRanks = 0
-
-    # First case
-    if True:
-        c = p[len(p)-1] # b
-        upperBound = firstIndexList.get(c)
-        lowerBound = upperBound+countTable.get(c)
-
-        for j in range(upperBound, lowerBound):
-            print (chr(x[l[j]]), p[len(p)-2], sep=" == ")
-            if chr(x[l[j]]) == p[len(p)-2]:
-                if firstRank < 0:
-                    firstRank = getrank(alphadic, j, p[len(p)-2], rank_table)
-                nRanks += 1
-
-    for i in range(len(p)-2, 0, -1):
-        if firstRank < 0:
-            print("Nothing :(")
-            return
-
-        # Look in f
-        c = p[i]
-        upperBound = firstIndexList.get(c)+firstRank
-        lowerBound = upperBound+nRanks
-        
-        firstRank = -1
-        nRanks = 0
-        for j in range(upperBound, lowerBound):
-            if chr(x[l[j]]) == p[i-1]:
-                if firstRank < 0:
-                    firstRank = getrank(alphadic, j, p[i-1], rank_table)
-                nRanks += 1
-
-    # Handle 0 case: success
-    print(firstRank, nRanks)  # 2 2
-    firstSolution = firstIndexList.get(p[0])+firstRank
-    for i in range(0, nRanks):
-        yield f[i+firstSolution]
+    # Report the matches
+    for i in range(left, right):
+        yield f[i]
 
     
 
 if __name__ == '__main__':
     alphabet = ["$", "i", "m", "p", "s"]
     alphadic = {a: i for i, a in enumerate(alphabet)}
-    x = memoryview("mississippi$".encode())
+    x = memoryview("m$".encode())
     suf = getSuffixes(x)
 
     f = radix_sort(suf)
     bwt = [(i-1)%len(f) for i in f]
 
-    rank_table, countTable = build_rank_table(x, alphadic, bwt)
+    rank_table = build_rank_table(x, alphadic, bwt)
 
     firstIndexList = getFirstIndexList(x, f, alphadic)
     
-    matches = list(searchPattern(x, "p", f, bwt, rank_table, firstIndexList, countTable, alphadic))
+    matches = list(searchPattern("", f, rank_table, firstIndexList, alphadic))
     print("Matches: ")
     for m in matches:
         print(m)
