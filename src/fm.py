@@ -1,6 +1,6 @@
 import argparse
 import sys
-
+from collections import defaultdict
 
 def main():
     argparser = argparse.ArgumentParser(
@@ -75,16 +75,17 @@ def radix_sort(lst: list[memoryview]):
             
 
 def counting_sort(lst: list[memoryview], place):
-    print(lst)
     maximum = max(lst, key = len)
-    counts = dict.fromkeys(["$",*sorted(maximum)],[])
+    
+    counts = defaultdict(list)
+    for key in ["$",*sorted(maximum)]:
+        counts[key] = []
+
     for string_index in range(len(lst)):
         if place >= len(lst[string_index]):
-            counts["$"] += lst[string_index]
-
-            
+            counts["$"].append(lst[string_index])
         else:
-            counts[lst[string_index][place]] += lst[string_index]
+            counts[lst[string_index][place]].append(lst[string_index])
 
     ordered = []
     for key in counts:
@@ -144,7 +145,7 @@ def searchPattern(p, f, rank_table, firstIndexList, alphadic):
 if __name__ == '__main__':
     alphabet = ["$", "i", "m", "p", "s"]
     alphadic = {a: i for i, a in enumerate(alphabet)}
-    x = memoryview("m$".encode())
+    x = memoryview("mississipi$".encode())
     suf = getSuffixes(x)
 
     f = radix_sort(suf)
@@ -154,7 +155,7 @@ if __name__ == '__main__':
 
     firstIndexList = getFirstIndexList(x, f, alphadic)
     
-    matches = list(searchPattern("", f, rank_table, firstIndexList, alphadic))
+    matches = list(searchPattern("i", f, rank_table, firstIndexList, alphadic))
     print("Matches: ")
     for m in matches:
         print(m)
