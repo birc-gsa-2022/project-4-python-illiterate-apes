@@ -77,17 +77,17 @@ def radix_sort(lst: list[memoryview]):
 
 def counting_sort(lst: list[memoryview], place):
     maximum = max(lst, key = len)
-    counts = dict.fromkeys(["$",*sorted(maximum)],[])
+    buckets = dict.fromkeys(["$",*sorted(maximum)],[])
     for string_index in range(len(lst)):
         if place >= len(lst[string_index]):
-            counts["$"] = [*counts["$"], lst[string_index]]
+            buckets["$"].append(lst[string_index])
             
         else:
-            counts[lst[string_index][place]] = [*counts[lst[string_index][place]], lst[string_index]]
+            buckets[lst[string_index][place]].append(lst[string_index])
 
     ordered = []
-    for key in counts:
-        ordered += counts[key]
+    for key in buckets:
+        ordered += buckets[key]
     return ordered
 
 def build_rank_table(x, alphadic, bwt):
