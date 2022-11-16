@@ -96,28 +96,6 @@ def preprocess_genomes(genomes):
         bwtList.append(BWTMatcher(f, rank_table, firstIndexList, alphadic))
     return bwtList
 
-def lower(a: str, x: str, sa: memoryview, lo: int, hi: int, offset: int) -> int:
-    """Finds the lower bound of `a` at `offset` in the block defined by `lo:hi`."""
-    while lo < hi:  # Search in sa[lo:hi]
-        m = (lo + hi) // 2
-        if x[(sa[m] + offset) % len(x)] < a: # compare at column offset in sa
-            lo = m + 1
-        else:
-            hi = m
-    return lo
-
-def upper(a: str, x: str, sa: memoryview, lo: int, hi: int, offset: int) -> int:
-    """Finds the upper bound of `a` at `offset` in the block defined by `lo:hi`."""
-    return lower(chr(ord(a) + 1), x, sa, lo, hi, offset)
-
-def search(sa, pattern, genome):
-    lo, hi = 0, len(sa)
-    for offset, a in enumerate(pattern):
-        lo = lower(a, genome, sa, lo, hi, offset)
-        hi = upper(a, genome, sa, lo, hi, offset)
-    for sol in sa[lo:hi]:
-        yield sol+1
-
 def getSuffixes(x):
     """
     Gets all suffixes from a string
@@ -201,36 +179,7 @@ def searchPattern(p, bwtMatcher):
 
     # Report the matches
     for i in range(left, right):
-        yield bwtMatcher.f[i]
-
-    
+        yield bwtMatcher.f[i]    
 
 if __name__ == '__main__':
     main()
-
-    # alphabet = ["$", "i", "m", "p", "s"]
-    # alphadic = {a: i for i, a in enumerate(alphabet)}
-    # x = memoryview("mississippi$".encode())
-    # suf = getSuffixes(x)
-
-    # f = radix_sort(suf)
-    # bwt = [(i-1)%len(f) for i in f]
-
-    # rank_table = build_rank_table(x, alphadic, bwt)
-
-    # firstIndexList = getFirstIndexList(x, f, alphadic)
-
-    # bwtMatcher = BWTMatcher(f, rank_table, firstIndexList, alphadic)
-
-    # file = open("fasta.fa.dat", "wb")    
-    # pickle.dump([bwtMatcher], file)
-
-    # file = open("fasta.fa.dat", "rb")    
-    # bwtMatcher = pickle.load(file)
-
-    # print(bwtMatcher[0])
-
-    # matches = list(searchPattern("i", bwtMatcher[0]))
-    # print("Matches: ")
-    # for m in matches:
-    #     print(m)
