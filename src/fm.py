@@ -1,5 +1,6 @@
 import argparse
 import sys
+import pickle
 from collections import defaultdict
 
 class BWTMatcher:
@@ -163,8 +164,16 @@ if __name__ == '__main__':
     firstIndexList = getFirstIndexList(x, f, alphadic)
 
     bwtMatcher = BWTMatcher(f, rank_table, firstIndexList, alphadic)
-    
-    matches = list(searchPattern("i", bwtMatcher))
+
+    file = open("fasta.fa.dat", "wb")    
+    pickle.dump([bwtMatcher], file)
+
+    file = open("fasta.fa.dat", "rb")    
+    bwtMatcher = pickle.load(file)
+
+    print(bwtMatcher[0])
+
+    matches = list(searchPattern("i", bwtMatcher[0]))
     print("Matches: ")
     for m in matches:
         print(m)
