@@ -2,6 +2,13 @@ import argparse
 import sys
 from collections import defaultdict
 
+class BWTMatcher:
+    def __init__(self, f, rank_table, firstIndexList, alphadic):
+        self.rank_table = rank_table
+        self.f = f
+        self.firstIndexList = firstIndexList
+        self.alphadic = alphadic
+
 def main():
     argparser = argparse.ArgumentParser(
         description="FM-index exact pattern matching",
@@ -126,26 +133,26 @@ def getFirstIndexList(x, f, alphadic):
 def getrank(alphadic, index, c, rank_table):
     return rank_table[index][alphadic.get(c)]
 
-def searchPattern(p, f, rank_table, firstIndexList, alphadic):
+def searchPattern(p, bwtMatcher):
     if p == "":
         return
     
-    left, right = 0, len(f)
+    left, right = 0, len(bwtMatcher.f)
     for a in reversed(p):
-        left = firstIndexList[a] + rank_table[left][alphadic.get(a)]
-        right = firstIndexList[a] + rank_table[right][alphadic.get(a)]
+        left = bwtMatcher.firstIndexList[a] + bwtMatcher.rank_table[left][bwtMatcher.alphadic.get(a)]
+        right = bwtMatcher.firstIndexList[a] + bwtMatcher.rank_table[right][bwtMatcher.alphadic.get(a)]
         if left >= right: return  # no matches
 
     # Report the matches
     for i in range(left, right):
-        yield f[i]
+        yield bwtMatcher.f[i]
 
     
 
 if __name__ == '__main__':
     alphabet = ["$", "i", "m", "p", "s"]
     alphadic = {a: i for i, a in enumerate(alphabet)}
-    x = memoryview("mississipi$".encode())
+    x = memoryview("mississippi$".encode())
     suf = getSuffixes(x)
 
     f = radix_sort(suf)
@@ -154,8 +161,10 @@ if __name__ == '__main__':
     rank_table = build_rank_table(x, alphadic, bwt)
 
     firstIndexList = getFirstIndexList(x, f, alphadic)
+
+    bwtMatcher = BWTMatcher(f, rank_table, firstIndexList, alphadic)
     
-    matches = list(searchPattern("i", f, rank_table, firstIndexList, alphadic))
+    matches = list(searchPattern("i", bwtMatcher))
     print("Matches: ")
     for m in matches:
         print(m)
