@@ -1,6 +1,8 @@
 import argparse
 import sys
+import fasta, fastq
 import pickle
+import os
 from collections import defaultdict
 
 class BWTMatcher:
@@ -31,15 +33,68 @@ def main():
     )
     args = argparser.parse_args()
 
+    if args.genome is None:
+        argparser.print_help()
+        sys.exit(1)
+
     if args.p:
         print(f"Preprocess {args.genome}")
+        genomes = fasta.fasta_parse(args.genome)
+        genomes_to_file(args.genome, genomes)
     else:
         # here we need the optional argument reads
         if args.reads is None:
             argparser.print_help()
             sys.exit(1)
-        print(f"Search {args.genome} for {args.reads}")
+        
+        genomes = fasta.fasta_parse(args.genome)
+        bwtList = None
+        # Check if we have a .dat file
+        datFile = args.genome+".dat"
+        if os.path.isfile(datFile):
+            datFileStream = open(datFile, "rb")
+            bwtList = pickle.load(datFileStream)
+        else:
+            bwtList = genomes_to_file(args.genome, genomes)
+        
+        reads = fastq.fastq_parser(args.reads)
 
+        out = []
+
+        for i, g in genomes:
+            for r in reads:
+                length = len(r[1])
+                if length == 0:
+                    continue
+                matches = searchPattern(r[1], bwtList[i])
+                for m in matches:
+                    # TODO: Implement properly getTrailingNumber
+                    out.append((getTrailingNumber(r[0]), getTrailingNumber(g[0]), m, length, r[1]))
+
+    for t in sorted(out, key=lambda x: (x[0], x[1], x[2])):
+        print(f"{t[0][0]}{t[0][1]}\t{t[1][0]}{t[1][1]}\t{t[2]}\t{t[3]}M\t{t[4]}")
+
+
+def genomes_to_file(filename, genomes):
+    bwtList = preprocess_genomes(genomes)
+    outputFile = open(filename+".dat", "wb")
+    pickle.dump(bwtList, outputFile)
+    return bwtList
+
+def preprocess_genomes(genomes):
+    bwtList = []
+    for gen in genomes:
+        string = gen[1]+"$"
+        alphadic = {a: i for i, a in set(string)}
+
+        x = memoryview(string.encode())
+        suf = getSuffixes(x)
+        f = radix_sort(suf)
+        bwt = [(i-1%len(f) for i in f)]
+        rank_table = build_rank_table(x, alphadic, bwt)
+        firstIndexList = getFirstIndexList(x, f, alphadic)
+        bwtList.append(BWTMatcher(f, rank_table, firstIndexList, alphadic))
+    return bwtList
 
 def lower(a: str, x: str, sa: memoryview, lo: int, hi: int, offset: int) -> int:
     """Finds the lower bound of `a` at `offset` in the block defined by `lo:hi`."""
@@ -151,34 +206,31 @@ def searchPattern(p, bwtMatcher):
     
 
 if __name__ == '__main__':
-    alphabet = ["$", "i", "m", "p", "s"]
-    alphadic = {a: i for i, a in enumerate(alphabet)}
-    x = memoryview("mississippi$".encode())
-    suf = getSuffixes(x)
+    main()
 
-    f = radix_sort(suf)
-    bwt = [(i-1)%len(f) for i in f]
+    # alphabet = ["$", "i", "m", "p", "s"]
+    # alphadic = {a: i for i, a in enumerate(alphabet)}
+    # x = memoryview("mississippi$".encode())
+    # suf = getSuffixes(x)
 
-    rank_table = build_rank_table(x, alphadic, bwt)
+    # f = radix_sort(suf)
+    # bwt = [(i-1)%len(f) for i in f]
 
-    firstIndexList = getFirstIndexList(x, f, alphadic)
+    # rank_table = build_rank_table(x, alphadic, bwt)
 
-    bwtMatcher = BWTMatcher(f, rank_table, firstIndexList, alphadic)
+    # firstIndexList = getFirstIndexList(x, f, alphadic)
 
-    file = open("fasta.fa.dat", "wb")    
-    pickle.dump([bwtMatcher], file)
+    # bwtMatcher = BWTMatcher(f, rank_table, firstIndexList, alphadic)
 
-    file = open("fasta.fa.dat", "rb")    
-    bwtMatcher = pickle.load(file)
+    # file = open("fasta.fa.dat", "wb")    
+    # pickle.dump([bwtMatcher], file)
 
-    print(bwtMatcher[0])
+    # file = open("fasta.fa.dat", "rb")    
+    # bwtMatcher = pickle.load(file)
 
-    matches = list(searchPattern("i", bwtMatcher[0]))
-    print("Matches: ")
-    for m in matches:
-        print(m)
+    # print(bwtMatcher[0])
 
-    # print(getrank(alphadic, 3, "a", rank_table))
-    
-
-    # main()
+    # matches = list(searchPattern("i", bwtMatcher[0]))
+    # print("Matches: ")
+    # for m in matches:
+    #     print(m)
