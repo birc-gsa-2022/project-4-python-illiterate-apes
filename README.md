@@ -19,7 +19,12 @@ Once you have implemented the `fm` program (and tested it to the best of your ab
 
 ## Preprocessing
 
-*What preprocessing data do you store in files, and how?*
+The data that is stored is the processed information related to each genome passed from the '.fa' file. More specifically, the following information is stored:
+
+* rank_table: Table that indicates the rank for every letter of the alphabet at each point in the bwt string. Each letter counter gets increased downwards when the letter appears in bwt.
+* f vector: This is the ordered suffix array from the original string.
+* firstIndexList: It's a list that indicates the first time that each letter appears at the f column, in order to boost the indexation speed every iteration.
+* alphadic: A dictionary ordered alphabetically that stores the index of every letter.
 
 ## Insights you may have had while implementing the algorithm
 
@@ -27,7 +32,7 @@ Once you have implemented the `fm` program (and tested it to the best of your ab
 
 ## Validation
 
-*How did you validate that the preprocessing and the search algorithm works?*
+The validation has been checked out with the very same set of problems used in project 3 (see https://github.com/birc-gsa-2022/project-3-python-illiterate-apes).
 
 ## Running time
 
