@@ -1,6 +1,9 @@
 import argparse
 import sys
+import fasta, fastq
 import pickle
+import os
+import re
 from collections import defaultdict
 
 class BWTMatcher:
@@ -31,37 +34,71 @@ def main():
     )
     args = argparser.parse_args()
 
+    if args.genome is None:
+        argparser.print_help()
+        sys.exit(1)
+
     if args.p:
-        print(f"Preprocess {args.genome}")
+        genomes = fasta.fasta_parse(args.genome)
+        genomes_to_file(args.genome.name, genomes)
     else:
         # here we need the optional argument reads
         if args.reads is None:
             argparser.print_help()
             sys.exit(1)
-        print(f"Search {args.genome} for {args.reads}")
-
-
-def lower(a: str, x: str, sa: memoryview, lo: int, hi: int, offset: int) -> int:
-    """Finds the lower bound of `a` at `offset` in the block defined by `lo:hi`."""
-    while lo < hi:  # Search in sa[lo:hi]
-        m = (lo + hi) // 2
-        if x[(sa[m] + offset) % len(x)] < a: # compare at column offset in sa
-            lo = m + 1
+        
+        genomes = fasta.fasta_parse(args.genome)
+        bwtList = None
+        # Check if we have a .dat file
+        datFile = args.genome.name+".dat"
+        if os.path.isfile(datFile):
+            datFileStream = open(datFile, "rb")
+            bwtList = pickle.load(datFileStream)
         else:
-            hi = m
-    return lo
+            bwtList = genomes_to_file(args.genome, genomes)
+        
+        reads = fastq.fastq_parser(args.reads)
 
-def upper(a: str, x: str, sa: memoryview, lo: int, hi: int, offset: int) -> int:
-    """Finds the upper bound of `a` at `offset` in the block defined by `lo:hi`."""
-    return lower(chr(ord(a) + 1), x, sa, lo, hi, offset)
+        out = []
 
-def search(sa, pattern, genome):
-    lo, hi = 0, len(sa)
-    for offset, a in enumerate(pattern):
-        lo = lower(a, genome, sa, lo, hi, offset)
-        hi = upper(a, genome, sa, lo, hi, offset)
-    for sol in sa[lo:hi]:
-        yield sol+1
+        for i, g in enumerate(genomes):
+            if len(g[1]) == 0:
+                continue
+            for r in reads:
+                length = len(r[1])
+                if length == 0:
+                    continue
+                matches = searchPattern(r[1], bwtList[i])
+                for m in matches:
+                    out.append((getTrailingNumber(r[0]), getTrailingNumber(g[0]), m+1, length, r[1]))
+
+        for t in sorted(out, key=lambda x: (x[0], x[1], x[2])):
+            print(f"{t[0][0]}{t[0][1]}\t{t[1][0]}{t[1][1]}\t{t[2]}\t{t[3]}M\t{t[4]}")
+
+def getTrailingNumber(s):
+    m = re.search(r'\d+$', s)
+    return (s[:m.start()], int(s[m.start():]))
+
+def genomes_to_file(filename, genomes):
+    bwtList = preprocess_genomes(genomes)
+    outputFile = open(str(filename)+".dat", "wb")
+    pickle.dump(bwtList, outputFile)
+    return bwtList
+
+def preprocess_genomes(genomes):
+    bwtList = []
+    for gen in genomes:
+        string = gen[1]+"$"
+        alphadic = {a: i for i, a in enumerate(set(string))}
+
+        x = memoryview(string.encode())
+        suf = getSuffixes(x)
+        f = radix_sort(suf)
+        bwt = [(i-1)%len(f) for i in f]
+        rank_table = build_rank_table(x, alphadic, bwt)
+        firstIndexList = getFirstIndexList(x, f, alphadic)
+        bwtList.append(BWTMatcher(f, rank_table, firstIndexList, alphadic))
+    return bwtList
 
 def getSuffixes(x):
     """
@@ -140,45 +177,15 @@ def searchPattern(p, bwtMatcher):
     
     left, right = 0, len(bwtMatcher.f)
     for a in reversed(p):
+        if a not in bwtMatcher.alphadic:
+            return
         left = bwtMatcher.firstIndexList[a] + bwtMatcher.rank_table[left][bwtMatcher.alphadic.get(a)]
         right = bwtMatcher.firstIndexList[a] + bwtMatcher.rank_table[right][bwtMatcher.alphadic.get(a)]
         if left >= right: return  # no matches
 
     # Report the matches
     for i in range(left, right):
-        yield bwtMatcher.f[i]
-
-    
+        yield bwtMatcher.f[i]    
 
 if __name__ == '__main__':
-    alphabet = ["$", "i", "m", "p", "s"]
-    alphadic = {a: i for i, a in enumerate(alphabet)}
-    x = memoryview("mississippi$".encode())
-    suf = getSuffixes(x)
-
-    f = radix_sort(suf)
-    bwt = [(i-1)%len(f) for i in f]
-
-    rank_table = build_rank_table(x, alphadic, bwt)
-
-    firstIndexList = getFirstIndexList(x, f, alphadic)
-
-    bwtMatcher = BWTMatcher(f, rank_table, firstIndexList, alphadic)
-
-    file = open("fasta.fa.dat", "wb")    
-    pickle.dump([bwtMatcher], file)
-
-    file = open("fasta.fa.dat", "rb")    
-    bwtMatcher = pickle.load(file)
-
-    print(bwtMatcher[0])
-
-    matches = list(searchPattern("i", bwtMatcher[0]))
-    print("Matches: ")
-    for m in matches:
-        print(m)
-
-    # print(getrank(alphadic, 3, "a", rank_table))
-    
-
-    # main()
+    main()
