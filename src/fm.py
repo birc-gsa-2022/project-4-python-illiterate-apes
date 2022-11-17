@@ -40,7 +40,7 @@ def main():
     if args.p:
         print(f"Preprocess {args.genome}")
         genomes = fasta.fasta_parse(args.genome)
-        genomes_to_file(args.genome, genomes)
+        genomes_to_file(args.genome.name, genomes)
     else:
         # here we need the optional argument reads
         if args.reads is None:
@@ -71,13 +71,13 @@ def main():
                     # TODO: Implement properly getTrailingNumber
                     out.append((getTrailingNumber(r[0]), getTrailingNumber(g[0]), m, length, r[1]))
 
-    for t in sorted(out, key=lambda x: (x[0], x[1], x[2])):
-        print(f"{t[0][0]}{t[0][1]}\t{t[1][0]}{t[1][1]}\t{t[2]}\t{t[3]}M\t{t[4]}")
+        for t in sorted(out, key=lambda x: (x[0], x[1], x[2])):
+            print(f"{t[0][0]}{t[0][1]}\t{t[1][0]}{t[1][1]}\t{t[2]}\t{t[3]}M\t{t[4]}")
 
 
 def genomes_to_file(filename, genomes):
     bwtList = preprocess_genomes(genomes)
-    outputFile = open(filename+".dat", "wb")
+    outputFile = open(str(filename)+".dat", "wb")
     pickle.dump(bwtList, outputFile)
     return bwtList
 
@@ -85,12 +85,12 @@ def preprocess_genomes(genomes):
     bwtList = []
     for gen in genomes:
         string = gen[1]+"$"
-        alphadic = {a: i for i, a in set(string)}
+        alphadic = {a: i for i, a in enumerate(set(string))}
 
         x = memoryview(string.encode())
         suf = getSuffixes(x)
         f = radix_sort(suf)
-        bwt = [(i-1%len(f) for i in f)]
+        bwt = [(i-1)%len(f) for i in f]
         rank_table = build_rank_table(x, alphadic, bwt)
         firstIndexList = getFirstIndexList(x, f, alphadic)
         bwtList.append(BWTMatcher(f, rank_table, firstIndexList, alphadic))
