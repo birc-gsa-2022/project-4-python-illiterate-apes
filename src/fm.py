@@ -39,7 +39,6 @@ def main():
         sys.exit(1)
 
     if args.p:
-        print(f"Preprocess {args.genome}")
         genomes = fasta.fasta_parse(args.genome)
         genomes_to_file(args.genome.name, genomes)
     else:
@@ -69,10 +68,9 @@ def main():
                 length = len(r[1])
                 if length == 0:
                     continue
-                print(g[1], r[1])
                 matches = searchPattern(r[1], bwtList[i])
                 for m in matches:
-                    out.append((getTrailingNumber(r[0]), getTrailingNumber(g[0]), m, length, r[1]))
+                    out.append((getTrailingNumber(r[0]), getTrailingNumber(g[0]), m+1, length, r[1]))
 
         for t in sorted(out, key=lambda x: (x[0], x[1], x[2])):
             print(f"{t[0][0]}{t[0][1]}\t{t[1][0]}{t[1][1]}\t{t[2]}\t{t[3]}M\t{t[4]}")
@@ -179,7 +177,8 @@ def searchPattern(p, bwtMatcher):
     
     left, right = 0, len(bwtMatcher.f)
     for a in reversed(p):
-        print(bwtMatcher.firstIndexList)
+        if a not in bwtMatcher.alphadic:
+            return
         left = bwtMatcher.firstIndexList[a] + bwtMatcher.rank_table[left][bwtMatcher.alphadic.get(a)]
         right = bwtMatcher.firstIndexList[a] + bwtMatcher.rank_table[right][bwtMatcher.alphadic.get(a)]
         if left >= right: return  # no matches
