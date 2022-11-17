@@ -3,6 +3,7 @@ import sys
 import fasta, fastq
 import pickle
 import os
+import re
 from collections import defaultdict
 
 class BWTMatcher:
@@ -50,7 +51,7 @@ def main():
         genomes = fasta.fasta_parse(args.genome)
         bwtList = None
         # Check if we have a .dat file
-        datFile = args.genome+".dat"
+        datFile = args.genome.name+".dat"
         if os.path.isfile(datFile):
             datFileStream = open(datFile, "rb")
             bwtList = pickle.load(datFileStream)
@@ -61,19 +62,24 @@ def main():
 
         out = []
 
-        for i, g in genomes:
+        for i, g in enumerate(genomes):
+            if len(g[1]) == 0:
+                continue
             for r in reads:
                 length = len(r[1])
                 if length == 0:
                     continue
+                print(g[1], r[1])
                 matches = searchPattern(r[1], bwtList[i])
                 for m in matches:
-                    # TODO: Implement properly getTrailingNumber
                     out.append((getTrailingNumber(r[0]), getTrailingNumber(g[0]), m, length, r[1]))
 
         for t in sorted(out, key=lambda x: (x[0], x[1], x[2])):
             print(f"{t[0][0]}{t[0][1]}\t{t[1][0]}{t[1][1]}\t{t[2]}\t{t[3]}M\t{t[4]}")
 
+def getTrailingNumber(s):
+    m = re.search(r'\d+$', s)
+    return (s[:m.start()], int(s[m.start():]))
 
 def genomes_to_file(filename, genomes):
     bwtList = preprocess_genomes(genomes)
@@ -173,6 +179,7 @@ def searchPattern(p, bwtMatcher):
     
     left, right = 0, len(bwtMatcher.f)
     for a in reversed(p):
+        print(bwtMatcher.firstIndexList)
         left = bwtMatcher.firstIndexList[a] + bwtMatcher.rank_table[left][bwtMatcher.alphadic.get(a)]
         right = bwtMatcher.firstIndexList[a] + bwtMatcher.rank_table[right][bwtMatcher.alphadic.get(a)]
         if left >= right: return  # no matches
