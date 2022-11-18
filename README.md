@@ -31,6 +31,7 @@ The data that is stored is the processed information related to each genome pass
 With the process of implementing the algorithm, we have realized the simplicity of its implementation, despite having to think a lot about it because it is very difficult to understand it properly. So, as a general conclusion, the implementation is very sotifiscated whilst elegant.
 
 ## Problems encountered if any
+In the radix sort implementation, there was a problem while appending to a list in a dictionary, that took awhile to understand and was fixed by using a defaultdic instead
 
 ## Validation
 
