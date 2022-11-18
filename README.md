@@ -28,6 +28,8 @@ The data that is stored is the processed information related to each genome pass
 
 ## Insights you may have had while implementing the algorithm
 
+With the process of implementing the algorithm, we have realized the simplicity of its implementation, despite having to think a lot about it because it is very difficult to understand it properly. So, as a general conclusion, the implementation is very sotifiscated whilst elegant.
+
 ## Problems encountered if any
 
 ## Validation
