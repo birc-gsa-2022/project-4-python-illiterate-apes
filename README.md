@@ -56,5 +56,5 @@ For the searching, a pattern of increasing length was used to see the variance i
 
 ![](figs/search.png)
 
-The experiments for the search seems to linear as well, even though there is some nosie at first.
+The experiments for the search seems to linear as well, even though there is some noise at first.
 
