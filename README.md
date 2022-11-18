@@ -33,6 +33,8 @@ With the process of implementing the algorithm, we have realized the simplicity 
 ## Problems encountered if any
 In the radix sort implementation, there was a problem while appending to a list in a dictionary, that took awhile to understand and was fixed by using a defaultdic instead
 
+In the search implementation, the first try had a lot of special cases as we were not understanding the algorithm completely yet, after studying a bit more we could fix the implementation and get rid of all the sketchy special cases.
+
 ## Validation
 
 The validation has been checked out with the very same set of problems used in project 3 (see https://github.com/birc-gsa-2022/project-3-python-illiterate-apes).
