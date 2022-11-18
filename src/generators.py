@@ -119,8 +119,6 @@ def border_array(x: str) -> list[int]:
     [0, 0, 0, 1, 2, 3, 4, 0, 0, 1]
     >>> border_array("")
     []
-    >>> strict_border_array("abaabaa")
-    [0, 0, 1, 1, 2, 3, 4]
     >>> border_array("abcabdabcabc")
     [0, 0, 0, 1, 2, 0, 1, 2, 3, 4, 5, 3]
     """
