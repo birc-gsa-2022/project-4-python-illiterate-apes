@@ -19,16 +19,47 @@ Once you have implemented the `fm` program (and tested it to the best of your ab
 
 ## Preprocessing
 
-*What preprocessing data do you store in files, and how?*
+The data that is stored is the processed information related to each genome passed from the '.fa' file. More specifically, the following information is stored:
+
+* rank_table: Table that indicates the rank for every letter of the alphabet at each point in the bwt string. Each letter counter gets increased downwards when the letter appears in bwt.
+* f vector: This is the ordered suffix array from the original string.
+* firstIndexList: It's a list that indicates the first time that each letter appears at the f column, in order to boost the indexation speed every iteration.
+* alphadic: A dictionary ordered alphabetically that stores the index of every letter.
 
 ## Insights you may have had while implementing the algorithm
 
+With the process of implementing the algorithm, we have realized the simplicity of its implementation, despite having to think a lot about it because it is very difficult to understand it properly. So, as a general conclusion, the implementation is very sotifiscated whilst elegant.
+
 ## Problems encountered if any
+In the radix sort implementation, there was a problem while appending to a list in a dictionary, that took awhile to understand and was fixed by using a defaultdic instead
+
+In the search implementation, the first try had a lot of special cases as we were not understanding the algorithm completely yet, after studying a bit more we could fix the implementation and get rid of all the sketchy special cases.
 
 ## Validation
 
-*How did you validate that the preprocessing and the search algorithm works?*
+The validation has been checked out with the very same set of problems used in project 3 (see https://github.com/birc-gsa-2022/project-3-python-illiterate-apes).
 
 ## Running time
 
-*List experiments and results that show that both the preprocessing algorithm and the search algorithm works in the expected running time. Add figures by embedding them here, as you learned how to do in project 1.*
+### Preprocessing
+The preprocessing steps including building a suffix array using radix sort in O(n^2), building the BWT from the suffix array in O(n) because we can subtract 1 from each element on the suffix array to get it (Because it is the last character of each suffix if we pretend its an array of rotations of the string). Then the tables used for rank and select are created, the firstIndexList (unlike then name would suggest, it is a python dictionary) has each character of the alphabet as a key and the value is the first time it appears on the string, this was done on O(n) by iterating over the string. Then we build the rank_table which gets the rank of a character in an index, this was build in O(n*a)(a is length of alphabet) but because in the domain of DNA the alphabet is constant we can simplify it to O(n). This concludes the preprocessing, which including the radix sort is O(n^2) but if we pretend we implemented a linear algorithm for the suffix array construction, it is O(n). 
+
+### Search
+The search iterates of the pattern being searched for, and performs O(1) computations everytime it iterates (select and rank using the firstIndexList and rank_table), so the search is O(m) where m is the length of the pattern.
+
+### Testing of runtime
+For the suffix array construction runtime refer to the previous project (https://github.com/birc-gsa-2022/project-3-python-illiterate-apes) readme.
+
+For the construction of the BWT, rank_table and firstIndexList, the runtime was tested together as in theory they should be all O(n) and O(3n) is just O(n), where strings of varying length were tested and plotted.
+
+![](figs/preprocess.png)
+
+The experiments for the preprocessing goes according to our expectations of linear increase in runtime.
+
+
+For the searching, a pattern of increasing length was used to see the variance in runtime, which should also be linear.
+
+![](figs/search.png)
+
+The experiments for the search seems to linear as well, even though there is some noise at first.
+

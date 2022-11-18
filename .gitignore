@@ -1,2 +1,6 @@
 __pycache__
 checks.json
+*.dat
+*.fa
+*.fq
+*.sam
